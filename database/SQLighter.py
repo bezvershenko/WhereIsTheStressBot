@@ -16,7 +16,15 @@ class SQLighter:
 
         self.connection.commit()
 
+    def add_user(self, userid, username):
+        self.cursor.execute("INSERT INTO users (userId, username, value)"
+                            " VALUES (?, ?, ?)", (userid, username, 0))
+        self.connection.commit()
+
+    def inc_value_user(self, userId):
+        self.cursor.execute("UPDATE users SET value = value + 1 WHERE ProductID = ?", (userId))
+        self.connection.commit()
+
+
     def close(self):
         self.connection.close()
-
-

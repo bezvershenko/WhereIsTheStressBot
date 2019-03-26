@@ -13,8 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 TOKEN, DATABASE_NAME = environ['TOKEN'], environ['DATABASE_NAME']
-PLAY, FINISH, END = range(3)
-
+ENTER_USERNAME = range(1)
 
 
 def error(bot, update, error):
@@ -31,13 +30,19 @@ def start(bot, update, chat_data):
 
     update.message.reply_text(
         'Привет! Это первый запуск бота! Тестируемся!'
+        'Ввведи свой никнейм:'
     )
 
-    return PLAY
+    return ENTER_USERNAME
 
 
-def answer_checking(bot, update, chat_data):
-    pass
+def enter_username(bot, update, user_data):
+    user = update.message.from_user
+    username = update.message.text
+
+    db_worker = SQLighter(DATABASE_NAME)
+    db_worker.add_user(user.id, username)
+    db_worker.close()
 
 
 
@@ -48,17 +53,19 @@ def finish(bot, update, chat_data):
     return
 
 
-
 def main():
     updater = Updater(TOKEN)
+
     dp = updater.dispatcher
     dp.add_error_handler(error)
+
     conversation_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start, pass_chat_data=True)],
+        entry_points=[CommandHandler('start', start, pass_user_data=True)],
+
         states={
-            PLAY: [MessageHandler(Filters.text, answer_checking, pass_chat_data=True)]
+            ENTER_USERNAME: [MessageHandler(Filters.text, enter_name, pass_user_data=True)]
         },
-        fallbacks=[CommandHandler('restart', start, pass_chat_data=True)]
+        fallbacks=[CommandHandler('restart', start, pass_user_data=True)]
     )
     dp.add_handler(conversation_handler)
     updater.start_polling()
