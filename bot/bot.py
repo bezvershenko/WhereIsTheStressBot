@@ -11,31 +11,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-
 ENTER_USERNAME, MENU, PLAY_BIG_QUIZ = range(3)
 
-menu_keyboard = [['Большая викторина', 'Викторина на скорость'], ['Рейтинг', 'Очистить статистику']]
+menu_keyboard = [['Большая\nвикторина📚', 'Викторина на скорость🚀'], ['Рейтинг📊', 'Очистить статистику🗑']]
 
 RIGHT_ANSWERS = [
-    'Правильно!', 'Ты угадал!', 'Точно!', 'Молодец, правильно!'
+    'Правильно✅\n', 'Ты прав✅\n', 'Точно✅\n', 'Молодец, правильно✅\n'
 ]
 
 WRONG_ANSWERS = [
-    'Ты ошибся. Правильный ответ: ',
-    'А вот и нет! Правильный ответ: ',
-    'Ошибочка! Праивльный ответ: ',
-    'Не угадал! Праивльный ответ: ',
+    'Ты ошибся❌\nПравильный ответ: ',
+    'А вот и нет❌\nПравильный ответ: ',
+    'Ошибочка❌\nПравильный ответ: ',
+    'Неееет❌\nПравильный ответ: ',
 ]
 
 
 def generate_leaderboard(top, user, place):
-    leadeboard = 'Рейтинг пользователей:\n'
+    leadeboard = 'ТОП-10:\n\n'
     print(*zip(range(1, len(top) + 1), top))
     leadeboard += '\n'.join(
         list(map(lambda x: '{}.\t{}\t{}'.format(x[0], x[1][1][:10], x[1][2]), zip(range(1, len(top) + 1), top))))
     print(place)
     if user not in top:
-        leadeboard += '\n...\n{}. {} {}'.format(place, user[1], user[2])
+        leadeboard += '\n...\n{}. {} {}'.format(place, user[1], user[2]) + '(вы)'
 
     return leadeboard
 
@@ -57,8 +56,9 @@ def start(bot, update, user_data):
     db_worker = SQLighter(DATABASE_NAME)
     all_users = db_worker.select_all('users')
     all_tasks = db_worker.select_all('tasks')
+
     shuffle(all_tasks)
-    user_data['all_tasks'] = iter(set(all_tasks))
+    user_data['all_tasks'] = iter(all_tasks)
     user_data['uid'] = user.id
     user_data['streak'] = 0
     db_worker.close()
@@ -127,9 +127,10 @@ def answer_checking_big_quiz(bot, update, user_data):
 
     elif user_answer == answers[right_answer]:
 
-        update.message.reply_text(choice(RIGHT_ANSWERS) + f' Следует говорить "{answers[right_answer]}"')
+        update.message.reply_text(choice(RIGHT_ANSWERS) + f'Следует говорить "{answers[right_answer]}"')
         user_data['streak'] += 1
         add = 1
+
         if user_data['streak'] % 5 == 0:
             update.message.reply_text(f"Ого, а вот и {user_data['streak']} подряд правильных ответов!")
             add = user_data['streak']
@@ -146,29 +147,32 @@ def answer_checking_big_quiz(bot, update, user_data):
 
 def main_menu(bot, update, user_data):
     text = update.message.text
-    if text == 'Большая викторина':
+    if text == menu_keyboard[0][0]:
         update.message.reply_text(
             'Большая викторина:\n1) Нет таймера\n2) Очень много заданий \n3) За '
             'правильный/неправильный ответ '
             'ты получаешь +1/-1 балл\n4) За пять правильных ответов ты получаешь +5 баллов, за десять - +10 и т.д.')
         send_next_big_quiz(bot, update, user_data)
         return PLAY_BIG_QUIZ
-    elif text == 'Викторина на скорость':
+
+    elif text == menu_keyboard[0][1]:
         update.message.reply_text(
             'Приносим свои извинения, мы еще работаем над этим режимом. Совсем скоро он появится!')
-    elif text == 'Рейтинг':
+
+    elif text == menu_keyboard[1][0]:
         db_worker = SQLighter(DATABASE_NAME)
         all_users = sorted(db_worker.select_all('users'), key=lambda x: x[2], reverse=True)
         my_result = list(filter(lambda x: x[0] == user_data['uid'], all_users))[0]
         my_place = all_users.index(my_result) + 1
-        best_10_results = all_users[:3]
+        best_10_results = all_users[:10]
 
         update.message.reply_text(generate_leaderboard(best_10_results, my_result, my_place))
         db_worker.close()
 
-    elif text == 'Очистить статистику':
+    elif text == menu_keyboard[1][1]:
         db_worker = SQLighter(DATABASE_NAME)
         db_worker.delete_user(user_data['uid'])
+        del user_data['all_tasks']
         db_worker.close()
         update.message.reply_text('Твоя статистика удалена! Для того, чтобы начать сначала - введи команду /start',
                                   reply_markup=ReplyKeyboardMarkup([['/start']]))
@@ -184,7 +188,8 @@ def main():
     dp.add_error_handler(error)
 
     conversation_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start, pass_user_data=True)],
+        entry_points=[CommandHandler('start', start, pass_user_data=True),
+                      MessageHandler(Filters.text, start, pass_user_data=True)],
 
         states={
             ENTER_USERNAME: [MessageHandler(Filters.text, enter_username, pass_user_data=True)],

@@ -20,9 +20,13 @@ class SQLighter:
         self.cursor.execute('DELETE FROM users WHERE userId=?', (uid,))
         self.connection.commit()
 
-    def add_user(self, userid, username):
+    def delete_task(self, word):
+        self.cursor.execute('DELETE FROM tasks WHERE word=?', (word,))
+        self.connection.commit()
+
+    def add_user(self, userid, username, score=0):
         self.cursor.execute("INSERT INTO users (userId, username, value)"
-                            " VALUES (?, ?, ?)", (userid, username, 0))
+                            " VALUES (?, ?, ?)", (userid, username, score))
         self.connection.commit()
 
     def change_value_user(self, uid, upd):
