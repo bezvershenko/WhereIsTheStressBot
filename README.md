@@ -1,3 +1,2 @@
 # WhereIsTheStressBot
-Telegram-бот, реализующий игру-викторину по правильной постановке ударений. 
-https://t.me/WhereIsTheStressBot
+[Telegram-бот](https://t.me/WhereIsTheStressBot), реализующий игру-викторину по правильной постановке ударений. 
